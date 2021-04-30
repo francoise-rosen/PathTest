@@ -14,53 +14,62 @@ class PathClientTest : public ::testing::Test
 protected:
     void SetUp() override
     {
-        for (auto n : subgraphOne)
+        for (auto n : subgraphX)
             pg.addNode (n);
-        for (auto p : subgraphTwo)
+        for (auto p : subgraphY)
             pg.addNode (p);
         /** Subgraph One - A,B,C,D,E are reachable */
         pg.addEdge ("A", "B");
         pg.addEdge ("A", "C");
         pg.addEdge ("A", "D");
         pg.addEdge ("D", "E");
-        pg.addEdge ("G", "F");
         
         /** Subgraph Two - F, G, H, I, J are reachable */
         pg.addEdge ("F", "G");
         pg.addEdge ("G", "H");
         pg.addEdge ("H", "I");
         pg.addEdge ("I", "J");
+        pg.addEdge ("G", "J");
+        pg.addEdge ("J", "F");
     }
     void TearDown() override
     {
        // pg.clear();
     }
     PathGraph pg;
-    static const std::list<std::string> subgraphOne;
-    static const std::list<std::string> subgraphTwo;
+    static const std::list<std::string> subgraphX;
+    static const std::list<std::string> subgraphY;
 };
 
-const std::list<std::string> PathClientTest::subgraphOne = {"A","B","C","D","E"};
-const std::list<std::string> PathClientTest::subgraphTwo = {"F", "G", "H", "I", "J"};
+const std::list<std::string> PathClientTest::subgraphX = {"A", "B", "C", "D", "E"};
+const std::list<std::string> PathClientTest::subgraphY = {"F", "G", "H", "I", "J"};
 
 /** Test if the input is valid (only alpha chars and white space allowed. */
 TEST_F (PathClientTest, ValidNameTest)
 {
-    EXPECT_TRUE (pg.isArgumentValid ("Athens")); // regular
     EXPECT_TRUE (pg.isArgumentValid ("G"));      // one letter
     EXPECT_TRUE (pg.isArgumentValid("Muenchenbladbach"));
     EXPECT_TRUE (pg.isArgumentValid ("Second Bad Vilbel")); // w/ white space
+    std::string max (163, 'a');
+    EXPECT_TRUE (pg.isArgumentValid (max));
 }
 
 /** Test if the input is invalid (only alpha chars and white space allowed. */
 TEST_F (PathClientTest, InvalidNameTest)
 {
-    EXPECT_FALSE (pg.isArgumentValid ("Second; Bad Vilbel2")); // non-alpha
+    /** non-alpha char */
+    EXPECT_FALSE (pg.isArgumentValid ("Second; Bad Vilbel2"));
     /** empty string */
     EXPECT_FALSE (pg.isArgumentValid (""));
-    /** this must throw since "G:" is an illegal entry. */
+}
+
+TEST_F (PathClientTest, IllegalArgumentExceptionTest)
+{
+    /** this must throw IllegalArgument exeption since "G:" is an illegal entry. */
     EXPECT_THROW (pg.findPath("A", "G:"), IllegalArgument);
-    /** this must throw since "G:" is an illegal entry. */
+    EXPECT_THROW (pg.findPath("G", ""), IllegalArgument);
+    std::string outOfRange (164, 'a');
+    EXPECT_THROW (pg.findPath(outOfRange, "B"), IllegalArgument);
 }
 
 /** Test if path beween two Nodes is not available. */
@@ -68,34 +77,42 @@ TEST_F (PathClientTest, PathNotAvailableTest)
 {
     /** two subgraphs are disconnected, so any node from the second graph is unreachable from
      any node of the first */
-    for (auto it = subgraphOne.begin(); it != subgraphOne.end(); ++it)
+    for (auto it = subgraphX.begin(); it != subgraphX.end(); ++it)
     {
-        for (auto jt = subgraphTwo.begin(); jt != subgraphTwo.end(); ++jt)
+        for (auto jt = subgraphY.begin(); jt != subgraphY.end(); ++jt)
         {
             EXPECT_THROW (pg.findPath(*it, *jt), PathNotFound);
         }
     }
 }
 
+/** Test only valid paths. */
 TEST_F (PathClientTest, PathAvailableTest)
 {
-    /** SubgraphOne. If every Node is reachable from the node A, then there's at least one path between all of them*/
-    for (auto it = subgraphOne.begin(); it != subgraphOne.end(); ++it)
+    /** SubgraphX. If every Node is reachable from the node A, then there's at least one path between all of them*/
+    for (auto it = subgraphX.begin(); it != subgraphX.end(); ++it)
     {
         EXPECT_NO_THROW (pg.findPath ("A", *it));
+    }
+    
+    /** SubgraphY. If every Node is reachable from the node J, then there's at least one path between all of them*/
+    
+    for (auto it = subgraphY.begin(); it != subgraphY.end(); ++it)
+    {
+        EXPECT_NO_THROW (pg.findPath ("J", *it));
     }
 }
 
 TEST_F (PathClientTest, ConnectSubgraphTest)
 {
     /** connect A with J. Now both subgraphs will connect*/
-    pg.addEdge (subgraphOne.front(), subgraphTwo.back());
+    pg.addEdge (subgraphX.front(), subgraphY.back());
     
-    for (auto it = subgraphOne.begin(); it != subgraphOne.end(); ++it)
+    for (auto it = subgraphX.begin(); it != subgraphX.end(); ++it)
     {
-        for (auto jt = subgraphTwo.begin(); jt != subgraphTwo.end(); ++jt)
+        for (auto jt = subgraphY.begin(); jt != subgraphY.end(); ++jt)
         {
-            /** every Node from SubgraphTwo is now reachable from every Node from SubgraphOne*/
+            /** every Node from SubgraphX is now reachable from every Node from SubgraphX*/
             EXPECT_NO_THROW (pg.findPath(*it, *jt));
         }
     }

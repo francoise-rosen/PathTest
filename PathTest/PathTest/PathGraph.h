@@ -70,7 +70,7 @@ public:
         std::string s = location;
         ltrim (s);
         rtrim (s);
-        if (s.begin() == s.end())
+        if (s.begin() == s.end() || s.length() > 163)
             return false;
         auto p = std::find_if (s.begin(), s.end(), [] (char c) { return (! isalpha(c)) && (c != ' ');});
         return (p == s.end());

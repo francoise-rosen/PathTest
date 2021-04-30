@@ -9,22 +9,26 @@
 #include <gtest/gtest.h>
 #include "PathGraph.h"
 
+/** Test fixture. */
 class PathClientTest : public ::testing::Test
 {
 protected:
     void SetUp() override
     {
+        /** Create an object of undirected unweighted graph and connect 2 subgraphs X and Y */
         for (auto n : subgraphX)
             pg.addNode (n);
         for (auto p : subgraphY)
             pg.addNode (p);
-        /** Subgraph One - A,B,C,D,E are reachable */
+        /** Add edges to the graph's subgraph X.
+            4 edges -  A, B, C, D, E nodes are reachable */
         pg.addEdge ("A", "B");
         pg.addEdge ("A", "C");
         pg.addEdge ("A", "D");
         pg.addEdge ("D", "E");
         
-        /** Subgraph Two - F, G, H, I, J are reachable */
+        /** Add edges to the graph's subgraph Y.
+            6 edges - F, G, H, I, J are reachable */
         pg.addEdge ("F", "G");
         pg.addEdge ("G", "H");
         pg.addEdge ("H", "I");
@@ -34,16 +38,19 @@ protected:
     }
     void TearDown() override
     {
-       // pg.clear();
     }
     PathGraph pg;
     static const std::list<std::string> subgraphX;
     static const std::list<std::string> subgraphY;
 };
 
+/** Test data: and new nodes to subgraphs. */
 const std::list<std::string> PathClientTest::subgraphX = {"A", "B", "C", "D", "E"};
 const std::list<std::string> PathClientTest::subgraphY = {"F", "G", "H", "I", "J"};
 
+// ===================================================
+// TEST BEGIN
+// ===================================================
 /** Test if the input is valid (only alpha chars and white space allowed. */
 TEST_F (PathClientTest, ValidNameTest)
 {
@@ -54,7 +61,7 @@ TEST_F (PathClientTest, ValidNameTest)
     EXPECT_TRUE (pg.isArgumentValid (max));
 }
 
-/** Test if the input is invalid (only alpha chars and white space allowed. */
+/** Test if the input is invalid (only alpha chars and white space allowed). */
 TEST_F (PathClientTest, InvalidNameTest)
 {
     /** non-alpha char */
@@ -63,6 +70,7 @@ TEST_F (PathClientTest, InvalidNameTest)
     EXPECT_FALSE (pg.isArgumentValid (""));
 }
 
+/** Test if findPath() throws IllegalArgument. */
 TEST_F (PathClientTest, IllegalArgumentExceptionTest)
 {
     /** this must throw IllegalArgument exeption since "G:" is an illegal entry. */
@@ -72,7 +80,8 @@ TEST_F (PathClientTest, IllegalArgumentExceptionTest)
     EXPECT_THROW (pg.findPath(outOfRange, "B"), IllegalArgument);
 }
 
-/** Test if path beween two Nodes is not available. */
+/** Test if path beween two Nodes is NOT available.
+    This must  throw PathNotFound exception. */
 TEST_F (PathClientTest, PathNotAvailableTest)
 {
     /** two subgraphs are disconnected, so any node from the second graph is unreachable from
@@ -86,7 +95,8 @@ TEST_F (PathClientTest, PathNotAvailableTest)
     }
 }
 
-/** Test only valid paths. */
+/** Test only valid paths.
+    findPath() must not throw, only valid Paths tested. */
 TEST_F (PathClientTest, PathAvailableTest)
 {
     /** SubgraphX. If every Node is reachable from the node A, then there's at least one path between all of them*/
@@ -96,13 +106,14 @@ TEST_F (PathClientTest, PathAvailableTest)
     }
     
     /** SubgraphY. If every Node is reachable from the node J, then there's at least one path between all of them*/
-    
     for (auto it = subgraphY.begin(); it != subgraphY.end(); ++it)
     {
         EXPECT_NO_THROW (pg.findPath ("J", *it));
     }
 }
 
+/** Connect subgraphX and subgraphY, any node from Y is not reachable from X, so
+    findPath() must not throw. */
 TEST_F (PathClientTest, ConnectSubgraphTest)
 {
     /** connect A with J. Now both subgraphs will connect*/
@@ -117,6 +128,10 @@ TEST_F (PathClientTest, ConnectSubgraphTest)
         }
     }
 }
+
+// ===================================================
+// TEST END
+// ===================================================
 
 int main(int argc, char * argv[]) {
     ::testing::InitGoogleTest(&argc, argv);

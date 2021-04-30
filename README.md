@@ -2,7 +2,7 @@
 ## Problem:
 Test if path (edge) exists in a given graph. Nodes are locations and edges are paths that connect those locations. 
 
-`Location argument constrains`: only alpha characters and white spaces allowed, case insensitive. 
+`Location argument constraints`: only alpha characters and white spaces allowed, case insensitive. No empty strings allowed. The length of the argument must be in range [1, 163]. 
 
 `Test fixture`: locations and paths for the test data are presented as an undirected graph that contains 2 disconnected subgraphs. 
 
